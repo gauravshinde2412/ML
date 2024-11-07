@@ -1,0 +1,194 @@
+{
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "vscode": {
+          "languageId": "plaintext"
+        }
+      },
+      "outputs": [],
+      "source": [
+        "# Install the required libraries with specific versions\n",
+        "!pip install pandas==1.5.3 numpy==1.21.6 scikit-learn==1.0.2 tensorflow==2.9.1 matplotlib==3.5.2 seaborn==0.11.2"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "vscode": {
+          "languageId": "plaintext"
+        }
+      },
+      "outputs": [],
+      "source": [
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.preprocessing import StandardScaler\n",
+        "from sklearn.metrics import accuracy_score, confusion_matrix\n",
+        "import tensorflow as tf\n",
+        "from tensorflow.keras.models import Sequential\n",
+        "from tensorflow.keras.layers import Dense, Dropout\n",
+        "\n",
+        "# Step 1: Load the dataset\n",
+        "data = pd.read_csv('/content/Churn_Modelling.csv')\n",
+        "\n",
+        "# Step 2: Distinguish the feature and target set\n",
+        "X = data.drop(columns=['RowNumber', 'CustomerId', 'Surname', 'Exited'])\n",
+        "y = data['Exited']\n",
+        "\n",
+        "# One-hot encoding for categorical features\n",
+        "X = pd.get_dummies(X, columns=['Geography', 'Gender'], drop_first=True)\n",
+        "\n",
+        "# Split the dataset into training and testing sets\n",
+        "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "vscode": {
+          "languageId": "plaintext"
+        }
+      },
+      "outputs": [],
+      "source": [
+        "\n",
+        "# Step 3: Normalize the train and test data\n",
+        "scaler = StandardScaler()\n",
+        "X_train_scaled = scaler.fit_transform(X_train)\n",
+        "X_test_scaled = scaler.transform(X_test)\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "vscode": {
+          "languageId": "plaintext"
+        }
+      },
+      "outputs": [],
+      "source": [
+        "\n",
+        "# Step 4: Initialize and build the model\n",
+        "model = Sequential([\n",
+        "    Dense(64, input_shape=(X_train_scaled.shape[1],), activation='relu'),\n",
+        "    Dropout(0.5),\n",
+        "    Dense(32, activation='relu'),\n",
+        "    Dense(1, activation='sigmoid')\n",
+        "])\n",
+        "\n",
+        "model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])\n",
+        "\n",
+        "# Train the model\n",
+        "history = model.fit(X_train_scaled, y_train, epochs=50, batch_size=32, validation_split=0.2)\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "vscode": {
+          "languageId": "plaintext"
+        }
+      },
+      "outputs": [],
+      "source": [
+        "\n",
+        "# Step 5: Print the accuracy score and confusion matrix\n",
+        "y_pred = (model.predict(X_test_scaled) > 0.5).astype(\"int32\")\n",
+        "accuracy = accuracy_score(y_test, y_pred)\n",
+        "conf_matrix = confusion_matrix(y_test, y_pred)\n",
+        "\n",
+        "print(f'Accuracy: {accuracy}')\n",
+        "print('Confusion Matrix:')\n",
+        "print(conf_matrix)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "[[1540 67] [ 209 184]]\n",
+        "\n",
+        "True Positives (TP): 184 - Customers who left and were correctly predicted to leave.\n",
+        "\n",
+        "True Negatives (TN): 1540 - Customers who stayed and were correctly predicted to stay.\n",
+        "\n",
+        "False Positives (FP): 67 - Customers who stayed but were incorrectly predicted to leave.\n",
+        "\n",
+        "False Negatives (FN): 209 - Customers who left but were incorrectly predicted to stay."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "vscode": {
+          "languageId": "plaintext"
+        }
+      },
+      "outputs": [],
+      "source": [
+        "# # Example new customer data\n",
+        "# new_customer = {\n",
+        "#     'CreditScore': 600,\n",
+        "#     'Geography': 'Spain',\n",
+        "#     'Gender': 'Female',\n",
+        "#     'Age': 40,\n",
+        "#     'Tenure': 3,\n",
+        "#     'Balance': 60000,\n",
+        "#     'NumOfProducts': 2,\n",
+        "#     'HasCrCard': 1,\n",
+        "#     'IsActiveMember': 1,\n",
+        "#     'EstimatedSalary': 50000\n",
+        "# }\n",
+        "\n",
+        "# # Convert to DataFrame\n",
+        "# new_customer_df = pd.DataFrame([new_customer])\n",
+        "\n",
+        "# # One-hot encoding for categorical features\n",
+        "# new_customer_df = pd.get_dummies(new_customer_df, columns=['Geography', 'Gender'], drop_first=True)\n",
+        "\n",
+        "# # Make sure the DataFrame has all columns in the same order as the training data\n",
+        "# # This step might need adjustments based on the columns in your training data\n",
+        "# missing_cols = set(X_train.columns) - set(new_customer_df.columns)\n",
+        "# for col in missing_cols:\n",
+        "#     new_customer_df[col] = 0\n",
+        "# new_customer_df = new_customer_df[X_train.columns]\n",
+        "\n",
+        "# # Normalize the new customer data\n",
+        "# new_customer_scaled = scaler.transform(new_customer_df)\n",
+        "\n",
+        "# # Predict if the new customer will exit\n",
+        "# prediction = model.predict(new_customer_scaled)\n",
+        "# prediction = (prediction > 0.5).astype(\"int32\")\n",
+        "\n",
+        "# # Output the prediction\n",
+        "# if prediction == 1:\n",
+        "#     print(\"The customer is likely to leave in the next 6 months.\")\n",
+        "# else:\n",
+        "#     print(\"The customer is likely to stay in the next 6 months.\")\n"
+      ]
+    }
+  ],
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
